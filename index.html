@@ -578,17 +578,14 @@
         // Show loading indicator
         document.getElementById('loading-indicator').style.display = 'block';
         
-        // GitHub raw URLs for the CSV files
-        const baseGithubUrl = "https://raw.githubusercontent.com/dani-rios-data/wells_fargo_2/main/";
-        
         // Load Brand Leaf data
-        const brandLeafData = await loadCSV(baseGithubUrl + 'wells_fargo_brand_leaf.csv', 'brand_leaf');
+        const brandLeafData = await loadCSV('wells_fargo_brand_leaf.csv', 'brand_leaf');
         
         // Load Device data
-        const deviceData = await loadCSV(baseGithubUrl + 'wells_fargo_device.csv', 'device');
+        const deviceData = await loadCSV('wells_fargo_device.csv', 'device');
         
         // Load Category data
-        const categoryData = await loadCSV(baseGithubUrl + 'wells_fargo_cat_8.csv', 'category');
+        const categoryData = await loadCSV('wells_fargo_cat_8.csv', 'category');
         
         // Create charts
         createTimeSeriesChart('brandLeafChart', 'Ad Spend Trends by Brand Leaf', brandLeafData);
@@ -600,7 +597,7 @@
       } catch (error) {
         console.error('Error loading data:', error);
         document.getElementById('loading-indicator').innerHTML = 
-          `<div class="alert alert-danger">Error: ${error.message}. Please verify the CSV files are available on GitHub.</div>`;
+          `<div class="alert alert-danger">Error: ${error.message}. Please verify the CSV files.</div>`;
       }
     }
     
