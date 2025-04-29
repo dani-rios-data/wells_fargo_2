@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wells Fargo Ad Spend Analysis</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --wells-red: #D71E28;
+      --wells-yellow: #FDC82F;
+      --wells-dark-red: #B01A1F;
+      --wells-gray: #F3F3F3;
+      --wells-dark-gray: #333333;
+      --wells-blue: #0077B6;
+      --wells-green: #00A86B;
+      --wells-purple: #8A2BE2;
+      --wells-light-blue: #E1F5FE;
+      --wells-light-red: #FFEBEE;
+      --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+      
+      /* Card styles */
+      --wf-red: #c01923;
+      --wf-red-light: #fdf5f5;
+      --wf-green: #0a7e40;
+      --wf-green-light: #f5fbf7;
+      --wf-yellow: #b08c11;
+      --wf-yellow-light: #fcfaf5;
+      --wf-blue: #0063a3;
+      --wf-blue-light: #f5f9fc;
+      --wf-burgundy: #ae0f1e;
+      --wf-burgundy-light: #fcf5f6;
+      --wf-neutral-dark: #333333;
+      --wf-neutral: #666666;
+      --wf-neutral-light: #e6e6e6;
+      --wf-panel-bg: #ffffff;
+      --wf-bg: #f8f8f8;
+      --card-radius: 12px;
+    }
+    
+    body {
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #F8F9FA;
+      color: var(--wells-dark-gray);
+      line-height: 1.6;
+    }
+    
+    .header {
+      background-color: var(--wells-red);
+      color: white;
+      padding: 0.7rem 1rem;
+      border-bottom: 3px solid var(--wells-yellow);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .header-logo {
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: white;
+      text-align: left;
+    }
+    
+    .header-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .section {
+      margin-top: 2rem;
+      margin-bottom: 3rem;
+      background-color: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: var(--card-shadow);
+      transition: all var(--transition-speed);
+    }
+    
+    .section:hover {
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+      transform: translateY(-5px);
+    }
+    
+    h1, h2, h3 {
+      margin-top: 0;
+      font-weight: 600;
+      color: var(--wells-dark-gray);
+    }
+    
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--wells-dark-red);
+      border-bottom: 2px solid var(--wells-light-red);
+      padding-bottom: 1rem;
+    }
+    
+    h3 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1.2rem;
+      color: var(--wf-neutral-dark);
+    }
+    
+    .chart-container {
+      position: relative;
+      margin: 15px auto;
+      height: 40vh;
+      width: 100%;
+      border-radius: 8px;
+      background-color: #FFFFFF;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .text-muted {
+      color: #6c757d;
+      font-size: 0.98rem;
+    }
+    
+    .info-box {
+      background-color: var(--wells-light-blue);
+      border-left: 4px solid var(--wells-blue);
+      padding: 1.5rem;
+      margin: 25px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .info-box p {
+      margin: 0;
+    }
+    
+    .info-box strong {
+      color: var(--wells-blue);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .chart-container {
+        height: 45vh;
+      }
+      
+      .section {
+        padding: 1.2rem;
+      }
+    }
+    
+    .loading-indicator {
+      text-align: center;
+      padding: 50px;
+      font-size: 18px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      margin: 20px auto;
+      border: 4px solid rgba(215, 30, 40, 0.2);
+      border-top: 4px solid #D71E28;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .filter-year-container {
+      background-color: var(--wells-light-blue);
+      padding: 12px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .filter-year-container select {
+      min-width: 120px;
+    }
+    
+    /* Custom tooltip styles */
+    .custom-tooltip {
+      background: #fff;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      max-width: 280px;
+    }
+    
+    .tooltip-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 13px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    
+    .tooltip-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+    
+    .color-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    .category-name {
+      flex: 1;
+      color: #555;
+      margin-right: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .tooltip-value {
+      font-weight: 600;
+      color: var(--wells-red);
+      margin-right: 3px;
+    }
+    
+    .tooltip-percentage {
+      color: #777;
+      font-size: 10px;
+    }
+    
+    .chart-title {
+      font-size: 16px;
+      color: var(--wells-dark-gray);
+      text-align: center;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    .chart-container.line-chart {
+      height: 45vh;
+      margin-top: 30px;
+      padding-top: 30px;
+    }
+    
+    .ranking-header-style {
+      font-size: 2rem;
+      margin-top: 1.5rem;
+      margin-bottom: 2rem;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      color: var(--wells-dark-red);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="container">
+      <div class="d-flex align-items-center">
+        <h1 class="header-logo mb-0">WELLS FARGO</h1>
+        <span class="header-subtitle ms-3">Ad Spend Analysis Dashboard</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="container">
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="loading-indicator">
+      <div class="spinner"></div>
+      <p>Loading data, please wait...</p>
+    </div>
+
+    <!-- Ad spend analysis section -->
+    <div class="section">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+          <h2>Ad Spend Analysis</h2>
+          <p class="text-muted">Data based on advertising spend over time</p>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <p><strong>About this analysis:</strong> This dashboard shows how advertising spend has evolved over time across different brands, devices, and categories.</p>
+      </div>
+      
+      <!-- Brand Leaf Chart -->
+      <div class="mt-5">
+        <h3 class="ranking-header-style">Ad Spend by Brand Leaf</h3>
+        <div class="chart-container line-chart">
+          <div id="brandLeafChart"></div>
+      </div>
+        </div>
+      
+      <!-- Device Chart -->
+      <div class="mt-5">
+        <h3 class="ranking-header-style">Ad Spend by Device</h3>
+      <div class="chart-container line-chart">
+          <div id="deviceChart"></div>
+          </div>
+        </div>
+        
+      <!-- Category Chart -->
+      <div class="mt-5">
+        <h3 class="ranking-header-style">Ad Spend by Category</h3>
+        <div class="chart-container line-chart">
+          <div id="categoryChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize variables
+    let brandLeafChart;
+    let deviceChart;
+    let categoryChart;
+    
+    // Colors for the chart (Wells Fargo style)
+    const colorPalette = [
+      '#c01923', // Wells Fargo red
+      '#0063a3', // Blue
+      '#0a7e40', // Green
+      '#8A2BE2', // Purple
+      '#b08c11', // Yellow
+      '#FF8C00', // Orange
+      '#4B0082', // Indigo
+      '#2F4F4F', // Dark slate
+    ];
+    
+    // Format large numbers with abbreviations
+    function formatLargeNumber(value, showDecimals = false) {
+      if (value >= 1000000000) {
+        return '$' + (showDecimals ? (value / 1000000000).toFixed(2) : Math.round(value / 1000000000)) + 'B';
+      } else if (value >= 1000000) {
+        return '$' + (showDecimals ? (value / 1000000).toFixed(2) : Math.round(value / 1000000)) + 'M';
+      } else if (value >= 1000) {
+        return '$' + (showDecimals ? (value / 1000).toFixed(2) : Math.round(value / 1000)) + 'K';
+      }
+      return '$' + (showDecimals ? value.toFixed(2) : Math.floor(value));
+    }
+    
+    // Function to create a time series chart
+    function createTimeSeriesChart(elementId, title, data) {
+      // Get dates and categories
+      const dates = [...new Set(data.map(item => item.Date))].sort();
+      const categories = [...new Set(data.map(item => item.category))];
+      
+      // Process data for chart
+      const series = categories.map(category => {
+      return { 
+          name: category,
+          data: dates.map(date => {
+            const matchingItems = data.filter(item => item.Date === date && item.category === category);
+            if (matchingItems.length > 0) {
+              return matchingItems.reduce((sum, item) => sum + (parseFloat(item.Spend_USD) || 0), 0);
+            }
+            return 0;
+          })
+        };
+      });
+      
+      // Format x-axis dates
+      const formattedDates = dates.map(date => moment(date).format('MMM YYYY'));
+      
+      // Destroy existing chart if it exists
+      if (window[elementId.replace('Chart', 'ChartObj')]) {
+        window[elementId.replace('Chart', 'ChartObj')].destroy();
+      }
+      
+      // Create chart container if it doesn't exist
+      const chartContainer = document.getElementById(elementId);
+      if (!chartContainer) {
+        console.error(`Chart container '${elementId}' not found`);
+        return;
+      }
+      
+      try {
+        // ApexCharts options
+        const options = {
+          series: series,
+          chart: {
+            height: 350,
+        type: 'line',
+            zoom: {
+              enabled: false
+            },
+            toolbar: {
+              show: false
+            },
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+            background: '#fff',
+            animations: {
+              enabled: true,
+              easing: 'easeinout',
+              speed: 800
+            }
+          },
+            title: {
+            text: title,
+            align: 'center',
+            style: {
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: '#333'
+            },
+            margin: 10
+          },
+          colors: colorPalette,
+          dataLabels: {
+            enabled: false
+          },
+          stroke: {
+            curve: 'smooth',
+            width: 2.5
+          },
+          grid: {
+            borderColor: '#e7e7e7',
+            row: {
+              colors: ['#f8f8f8', 'transparent'],
+              opacity: 0.1
+              },
+              padding: {
+              right: 10,
+              left: 10
+            }
+          },
+          markers: {
+            size: 4,
+            hover: {
+              size: 6
+            }
+          },
+          xaxis: {
+            categories: formattedDates,
+            title: {
+              text: 'Month',
+              style: {
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#555'
+              }
+            },
+              labels: {
+              style: {
+                fontSize: '10px',
+                colors: '#555'
+              }
+            }
+          },
+          yaxis: {
+            title: {
+              text: 'Spend (USD)',
+              style: {
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: '#555'
+              }
+            },
+            labels: {
+              formatter: function(val) {
+                return formatLargeNumber(val);
+              },
+              style: {
+                fontSize: '10px',
+                colors: '#555'
+              }
+            }
+          },
+          legend: {
+            position: 'right',
+            offsetY: 0,
+            fontSize: '11px',
+            fontWeight: 500,
+            markers: {
+              width: 8,
+              height: 8,
+              radius: 6
+            },
+            itemMargin: {
+              horizontal: 10,
+              vertical: 5
+            }
+          },
+            tooltip: {
+            enabled: true,
+            shared: true,
+            intersect: false,
+            followCursor: true,
+            fillSeriesColor: false,
+            onDatasetHover: {
+              highlightDataSeries: true
+            },
+            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+              const date = formattedDates[dataPointIndex];
+              let tooltipContent = `<div class="custom-tooltip">
+                <div class="tooltip-title">${date}</div>`;
+              
+              // Add all category values for this date point
+              let totalForMonth = 0;
+              let categoryValues = [];
+              
+              categories.forEach((category, idx) => {
+                const value = series[idx][dataPointIndex];
+                totalForMonth += value;
+                categoryValues.push({
+                  category: category,
+                  value: value,
+                  color: colorPalette[idx % colorPalette.length]
+                });
+              });
+              
+              // Sort categories by value (highest to lowest)
+              categoryValues.sort((a, b) => b.value - a.value);
+              
+              // Calculate percentages and add each series to tooltip
+              categoryValues.forEach(item => {
+                if (item.value > 0) {
+                const percentage = (item.value / totalForMonth * 100).toFixed(2);
+                
+                tooltipContent += `
+                <div class="tooltip-row">
+                  <span class="color-indicator" style="background-color: ${item.color}"></span>
+                  <span class="category-name">${item.category}: </span>
+                  <span class="tooltip-value">${formatLargeNumber(item.value, true)}</span>
+                  <span class="tooltip-percentage">(${percentage}%)</span>
+                </div>`;
+                }
+              });
+              
+              tooltipContent += `</div>`;
+              return tooltipContent;
+            },
+            theme: 'light'
+          }
+        };
+        
+        // Create chart
+        const chart = new ApexCharts(document.getElementById(elementId), options);
+        chart.render();
+        
+        // Store chart object for later reference
+        window[elementId.replace('Chart', 'ChartObj')] = chart;
+        
+        console.log(`${elementId} rendered successfully`);
+      } catch (error) {
+        console.error(`Error rendering ${elementId}:`, error);
+      }
+    }
+    
+    // Load CSVs and create charts
+    async function loadAllData() {
+      try {
+        // Show loading indicator
+        document.getElementById('loading-indicator').style.display = 'block';
+        
+        // Load Brand Leaf data
+        const brandLeafData = await loadCSV('wells_fargo_brand_leaf.csv', 'brand_leaf');
+        
+        // Load Device data
+        const deviceData = await loadCSV('wells_fargo_device.csv', 'device');
+        
+        // Load Category data
+        const categoryData = await loadCSV('wells_fargo_cat_8.csv', 'category');
+        
+        // Create charts
+        createTimeSeriesChart('brandLeafChart', 'Ad Spend Trends by Brand Leaf', brandLeafData);
+        createTimeSeriesChart('deviceChart', 'Ad Spend Trends by Device', deviceData);
+        createTimeSeriesChart('categoryChart', 'Ad Spend Trends by Category', categoryData);
+        
+        // Hide loading indicator
+        document.getElementById('loading-indicator').style.display = 'none';
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('loading-indicator').innerHTML = 
+          `<div class="alert alert-danger">Error: ${error.message}. Please verify the CSV files.</div>`;
+      }
+    }
+    
+    // Load CSV and return processed data
+    async function loadCSV(filename, categoryField) {
+      return new Promise((resolve, reject) => {
+        fetch(filename)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`Could not load file ${filename}`);
+            }
+            return response.text();
+          })
+          .then(csvData => {
+            Papa.parse(csvData, {
+              header: true,
+              dynamicTyping: true,
+              skipEmptyLines: true,
+              complete: function(results) {
+                if (results.errors && results.errors.length > 0) {
+                  console.warn(`Errors processing ${filename}:`, results.errors);
+                }
+                
+                // Process data
+                const data = processCSVData(results.data, categoryField);
+                resolve(data);
+              },
+              error: function(error) {
+                reject(error);
+              }
+            });
+          })
+          .catch(error => {
+            console.error(`Error loading ${filename}:`, error);
+            reject(error);
+          });
+      });
+    }
+    
+    // Process CSV data
+    function processCSVData(data, categoryField) {
+      // Find the proper column names
+      let dateColumn = findColumn(data[0], ['date', 'fecha', 'month', 'periodo']);
+      let categoryColumn = findColumn(data[0], [categoryField, 'category', 'categoria', 'type', 'tipo']);
+      let spendColumn = findColumn(data[0], ['spend', 'spend_usd', 'gasto', 'monto', 'amount', 'value']);
+      
+      console.log(`Columns for ${categoryField}:`, { dateColumn, categoryColumn, spendColumn });
+      
+      // If columns not found, try to infer them
+      if (!dateColumn || !categoryColumn || !spendColumn) {
+        const columns = Object.keys(data[0] || {});
+        console.log(`Available columns for ${categoryField}:`, columns);
+        
+        // Try to infer columns
+        if (!dateColumn) dateColumn = columns.find(col => /date|fecha|month|mes/i.test(col)) || 'Date';
+        if (!categoryColumn) categoryColumn = columns.find(col => /category|tipo|type|name|nombre|leaf|device/i.test(col)) || categoryField;
+        if (!spendColumn) spendColumn = columns.find(col => /spend|gasto|amount|value|monto|usd/i.test(col)) || 'Spend_USD';
+      }
+      
+      // Map and filter data
+      return data.filter(row => {
+        return row[dateColumn] && row[categoryColumn] && row[spendColumn] && parseFloat(row[spendColumn]) > 0;
+      }).map(row => {
+        // Format date if needed
+        let dateStr = row[dateColumn];
+        if (typeof dateStr === 'string') {
+          // Try to standardize date format to YYYY-MM
+          if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 2) {
+              // Assuming MM/YYYY format
+              dateStr = `${parts[1]}-${parts[0].padStart(2, '0')}`;
+            } else if (parts.length === 3) {
+              // Assuming DD/MM/YYYY format
+              dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}`;
+            }
+          } else if (dateStr.length === 6) {
+            // Assuming YYYYMM format
+            dateStr = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}`;
+          }
+        }
+        
+        return {
+          Date: dateStr,
+          category: row[categoryColumn],
+          Spend_USD: parseFloat(row[spendColumn]) || 0
+        };
+      });
+    }
+    
+    // Helper function to find a column by potential names
+    function findColumn(row, possibleNames) {
+      if (!row) return null;
+      
+      // First try exact match
+      for (const name of possibleNames) {
+        if (row[name] !== undefined) return name;
+      }
+      
+      // Then try case-insensitive match
+      const columns = Object.keys(row);
+      for (const name of possibleNames) {
+        const found = columns.find(col => col.toLowerCase() === name.toLowerCase());
+        if (found) return found;
+      }
+      
+      // Finally try partial match
+      for (const name of possibleNames) {
+        const found = columns.find(col => col.toLowerCase().includes(name.toLowerCase()));
+        if (found) return found;
+      }
+      
+      return null;
+    }
+    
+    // Load data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("DOM loaded, initializing application...");
+      loadAllData();
+    });
+  </script>
+</body>
+</html>
