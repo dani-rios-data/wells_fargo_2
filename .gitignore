@@ -1,0 +1,15 @@
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+
+# Directorios que no deben incluirse
+node_modules/
+__pycache__/
+.vscode/
+.idea/
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+*.ipynb
